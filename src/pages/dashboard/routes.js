@@ -1,19 +1,19 @@
 import * as React from 'react';
-import { Box, Button, IconButton, TextField, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Stepper, Step, StepLabel, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Box, Button, IconButton, TextField, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Stepper, Step, StepLabel, FormControl, InputLabel, Select, MenuItem, Snackbar, Alert } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Layout from '../../components/layout';
-
-const createData = (id, salida, destino, fechaHora, puerta) => {
-  return { id, salida, destino, fechaHora, puerta };
-};
+import { getRoutes, addRoute, editRoute, deleteRoute } from '../../services/routeService';
 
 const Routes = () => {
   const [rows, setRows] = React.useState([]);
   const [filteredRows, setFilteredRows] = React.useState([]);
   const [openAdd, setOpenAdd] = React.useState(false);
+  const [openEdit, setOpenEdit] = React.useState(false);
+  const [openDelete, setOpenDelete] = React.useState(false);
+  const [currentRow, setCurrentRow] = React.useState(null);
   const [activeStep, setActiveStep] = React.useState(0);
   const [filter, setFilter] = React.useState('');
   const [searchBy, setSearchBy] = React.useState('salida');
@@ -25,6 +25,11 @@ const Routes = () => {
     precio_adulto: '',
     precio_nino: '',
     precio_tercera_edad: ''
+  });
+  const [snackbar, setSnackbar] = React.useState({
+    open: false,
+    message: '',
+    severity: 'success',
   });
 
   const steps = ['Detalles Generales', 'Precios'];
@@ -52,6 +57,26 @@ const Routes = () => {
     });
   };
 
+  const handleOpenEdit = (row) => {
+    setCurrentRow(row);
+    setNewRoute(row);
+    setOpenEdit(true);
+  };
+
+  const handleCloseEdit = () => {
+    setOpenEdit(false);
+    setActiveStep(0);
+  };
+
+  const handleOpenDelete = (row) => {
+    setCurrentRow(row);
+    setOpenDelete(true);
+  };
+
+  const handleCloseDelete = () => {
+    setOpenDelete(false);
+  };
+
   const handleChange = (e) => {
     setNewRoute({ ...newRoute, [e.target.name]: e.target.value });
   };
@@ -71,13 +96,76 @@ const Routes = () => {
     setFilteredRows(filtered);
   };
 
-  const handleAdd = () => {
-    // Aquí puedes añadir la lógica para añadir la nueva ruta a la base de datos o estado
-    const newRow = createData(rows.length + 1, newRoute.salida, newRoute.llegada, newRoute.fecha_hora, newRoute.puerta);
-    setRows([...rows, newRow]);
-    setFilteredRows([...rows, newRow]);
-    handleCloseAdd();
+  const validateRouteData = (data) => {
+    if (!data.salida || !data.llegada || !data.fecha_hora || !data.puerta || !data.precio_adulto || !data.precio_nino || !data.precio_tercera_edad) {
+      return false;
+    }
+    return true;
   };
+
+  const fetchRoutes = async () => {
+    try {
+      const routes = await getRoutes();
+      setRows(routes);
+      setFilteredRows(routes);
+    } catch (error) {
+      console.error('Error fetching routes:', error);
+    }
+  };
+
+  const handleAdd = async () => {
+    if (!validateRouteData(newRoute)) {
+      setSnackbar({ open: true, message: 'Todos los campos son obligatorios', severity: 'error' });
+      return;
+    }
+
+    try {
+      await addRoute(newRoute);
+      await fetchRoutes();
+      handleCloseAdd();
+      setSnackbar({ open: true, message: 'Ruta añadida con éxito', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Error al añadir ruta', severity: 'error' });
+      console.error('Error adding route:', error);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!validateRouteData(newRoute)) {
+      setSnackbar({ open: true, message: 'Todos los campos son obligatorios', severity: 'error' });
+      return;
+    }
+
+    try {
+      await editRoute(currentRow.rutaId, newRoute);
+      await fetchRoutes();
+      handleCloseEdit();
+      setSnackbar({ open: true, message: 'Ruta actualizada con éxito', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Error al actualizar ruta', severity: 'error' });
+      console.error('Error editing route:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteRoute(currentRow.rutaId);
+      await fetchRoutes();
+      handleCloseDelete();
+      setSnackbar({ open: true, message: 'Ruta eliminada con éxito', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Error al eliminar ruta', severity: 'error' });
+      console.error('Error deleting route:', error);
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  React.useEffect(() => {
+    fetchRoutes();
+  }, []);
 
   return (
     <Layout>
@@ -112,7 +200,7 @@ const Routes = () => {
                 label="Buscar por"
               >
                 <MenuItem value="salida">Salida</MenuItem>
-                <MenuItem value="destino">Destino</MenuItem>
+                <MenuItem value="llegada">Destino</MenuItem>
                 <MenuItem value="puerta">Puerta</MenuItem>
               </Select>
             </FormControl>
@@ -141,11 +229,11 @@ const Routes = () => {
             </TableHead>
             <TableBody>
               {filteredRows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell align="center">{row.id}</TableCell>
+                <TableRow key={row.rutaId}>
+                  <TableCell align="center">{row.rutaId}</TableCell>
                   <TableCell align="center">{row.salida}</TableCell>
-                  <TableCell align="center">{row.destino}</TableCell>
-                  <TableCell align="center">{row.fechaHora}</TableCell>
+                  <TableCell align="center">{row.llegada}</TableCell>
+                  <TableCell align="center">{row.fecha_hora}</TableCell>
                   <TableCell align="center">{row.puerta}</TableCell>
                   <TableCell align="center">
                     <Button
@@ -297,6 +385,154 @@ const Routes = () => {
             )}
           </DialogActions>
         </Dialog>
+
+        {/* Modal Editar */}
+        <Dialog open={openEdit} onClose={handleCloseEdit} maxWidth="md">
+          <DialogTitle>Editar Ruta</DialogTitle>
+          <DialogContent>
+            <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+              {steps.map((label, index) => (
+                <Step key={index}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+            {activeStep === 0 && (
+              <>
+                <TextField
+                  autoFocus
+                  margin="dense"
+                  label="Salida"
+                  type="text"
+                  fullWidth
+                  variant="outlined"
+                  name="salida"
+                  value={newRoute.salida}
+                  onChange={handleChange}
+                  sx={{ marginBottom: 2 }}
+                />
+                <TextField
+                  margin="dense"
+                  label="Llegada"
+                  type="text"
+                  fullWidth
+                  variant="outlined"
+                  name="llegada"
+                  value={newRoute.llegada}
+                  onChange={handleChange}
+                  sx={{ marginBottom: 2 }}
+                />
+                <TextField
+                  margin="dense"
+                  label="Fecha y Hora"
+                  type="datetime-local"
+                  fullWidth
+                  variant="outlined"
+                  name="fecha_hora"
+                  value={newRoute.fecha_hora}
+                  onChange={handleChange}
+                  sx={{ marginBottom: 2 }}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  margin="dense"
+                  label="Puerta"
+                  type="text"
+                  fullWidth
+                  variant="outlined"
+                  name="puerta"
+                  value={newRoute.puerta}
+                  onChange={handleChange}
+                  sx={{ marginBottom: 2 }}
+                />
+              </>
+            )}
+            {activeStep === 1 && (
+              <>
+                <TextField
+                  margin="dense"
+                  label="Precio Adulto"
+                  type="number"
+                  fullWidth
+                  variant="outlined"
+                  name="precio_adulto"
+                  value={newRoute.precio_adulto}
+                  onChange={handleChange}
+                  sx={{ marginBottom: 2 }}
+                  InputProps={{ inputProps: { step: "0.01" } }}
+                />
+                <TextField
+                  margin="dense"
+                  label="Precio Niño"
+                  type="number"
+                  fullWidth
+                  variant="outlined"
+                  name="precio_nino"
+                  value={newRoute.precio_nino}
+                  onChange={handleChange}
+                  sx={{ marginBottom: 2 }}
+                  InputProps={{ inputProps: { step: "0.01" } }}
+                />
+                <TextField
+                  margin="dense"
+                  label="Precio Tercera Edad"
+                  type="number"
+                  fullWidth
+                  variant="outlined"
+                  name="precio_tercera_edad"
+                  value={newRoute.precio_tercera_edad}
+                  onChange={handleChange}
+                  sx={{ marginBottom: 2 }}
+                  InputProps={{ inputProps: { step: "0.01" } }}
+                />
+              </>
+            )}
+          </DialogContent>
+          <DialogActions>
+            {activeStep === 0 ? (
+              <>
+                <Button onClick={handleCloseEdit} color="primary">
+                  Cancelar
+                </Button>
+                <Button onClick={handleNext} color="primary">
+                  Siguiente
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={handleBack} color="primary">
+                  Atrás
+                </Button>
+                <Button onClick={handleEdit} color="primary">
+                  Guardar
+                </Button>
+              </>
+            )}
+          </DialogActions>
+        </Dialog>
+
+        {/* Modal Eliminar */}
+        <Dialog open={openDelete} onClose={handleCloseDelete}>
+          <DialogTitle>Eliminar Ruta</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              ¿Está seguro de que desea eliminar la ruta {currentRow ? currentRow.rutaId : ''}?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDelete} color="primary">
+              Cancelar
+            </Button>
+            <Button onClick={handleDelete} color="error">
+              Eliminar
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+          <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
     </Layout>
   );

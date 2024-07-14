@@ -11,6 +11,7 @@ export const getRoutes = async () => {
 
 export const addRoute = async (routeData) => {
   try {
+    console.log(routeData);
     const response = await apiClient.post('/routes/create-route', routeData);
     return response.data.data;
   } catch (error) {

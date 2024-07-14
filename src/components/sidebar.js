@@ -40,6 +40,20 @@ const Sidebar = () => {
         };
   };
 
+  const getIconStyle = (path) => {
+    return router.pathname === path
+      ? { color: '#162B4E' }
+      : { color: '#fff' };
+  };
+
+  const getHoverIconStyle = (path) => {
+    return {
+      '&:hover .MuiSvgIcon-root': {
+        color: '#162B4E',
+      },
+    };
+  };
+
   return (
     <Drawer
       variant="permanent"
@@ -64,9 +78,9 @@ const Sidebar = () => {
       <List sx={{ padding: '10px 0' }}>
         <Link href="/dashboard" passHref>
           <ListItem disablePadding>
-            <ListItemButton sx={getLinkStyle('/dashboard')}>
-              <ListItemIcon>
-                <HomeIcon sx={{ color: 'inherit' }} />
+            <ListItemButton sx={{ ...getLinkStyle('/dashboard'), ...getHoverIconStyle('/dashboard') }}>
+              <ListItemIcon sx={getIconStyle('/dashboard')}>
+                <HomeIcon />
               </ListItemIcon>
               <ListItemText primary="Inicio" sx={{ color: 'inherit' }} />
             </ListItemButton>
@@ -74,9 +88,9 @@ const Sidebar = () => {
         </Link>
         <Link href="/dashboard/routes" passHref>
           <ListItem disablePadding>
-            <ListItemButton sx={getLinkStyle('/dashboard/routes')}>
-              <ListItemIcon>
-                <RouteIcon sx={{ color: 'inherit' }} />
+            <ListItemButton sx={{ ...getLinkStyle('/dashboard/routes'), ...getHoverIconStyle('/dashboard/routes') }}>
+              <ListItemIcon sx={getIconStyle('/dashboard/routes')}>
+                <RouteIcon />
               </ListItemIcon>
               <ListItemText primary="Rutas" sx={{ color: 'inherit' }} />
             </ListItemButton>
@@ -84,9 +98,9 @@ const Sidebar = () => {
         </Link>
         <Link href="/dashboard/users" passHref>
           <ListItem disablePadding>
-            <ListItemButton sx={getLinkStyle('/dashboard/users')}>
-              <ListItemIcon>
-                <PeopleIcon sx={{ color: 'inherit' }} />
+            <ListItemButton sx={{ ...getLinkStyle('/dashboard/users'), ...getHoverIconStyle('/dashboard/users') }}>
+              <ListItemIcon sx={getIconStyle('/dashboard/users')}>
+                <PeopleIcon />
               </ListItemIcon>
               <ListItemText primary="Usuarios" sx={{ color: 'inherit' }} />
             </ListItemButton>
@@ -94,9 +108,9 @@ const Sidebar = () => {
         </Link>
         <Link href="/dashboard/profile" passHref>
           <ListItem disablePadding>
-            <ListItemButton sx={getLinkStyle('/dashboard/profile')}>
-              <ListItemIcon>
-                <AccountCircleIcon sx={{ color: 'inherit' }} />
+            <ListItemButton sx={{ ...getLinkStyle('/dashboard/profile'), ...getHoverIconStyle('/dashboard/profile') }}>
+              <ListItemIcon sx={getIconStyle('/dashboard/profile')}>
+                <AccountCircleIcon />
               </ListItemIcon>
               <ListItemText primary="Perfil" sx={{ color: 'inherit' }} />
             </ListItemButton>
@@ -106,9 +120,9 @@ const Sidebar = () => {
       <Box sx={{ flexGrow: 1 }} />
       <Divider sx={{ borderColor: '#fff' }} />
       <ListItem disablePadding sx={{ padding: '10px 0' }} onClick={handleLogout}>
-        <ListItemButton sx={getLinkStyle('/logout')}>
-          <ListItemIcon>
-            <ExitToAppIcon sx={{ color: 'inherit' }} />
+        <ListItemButton sx={{ ...getLinkStyle('/logout'), ...getHoverIconStyle('/logout') }}>
+          <ListItemIcon sx={getIconStyle('/logout')}>
+            <ExitToAppIcon />
           </ListItemIcon>
           <ListItemText primary="Cerrar sesión" sx={{ color: 'inherit' }} />
         </ListItemButton>
