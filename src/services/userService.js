@@ -46,4 +46,4 @@ export const deleteUser = async (userId) => {
     } catch (error) {
         throw error;
     }
-}
+};
