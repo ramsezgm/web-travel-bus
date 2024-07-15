@@ -12,7 +12,7 @@ const Sidebar = () => {
   const router = useRouter();
 
   const handleLogout = async () => {
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'token=; path=/; domain=' + window.location.hostname + '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     localStorage.removeItem('userId');
     router.push('/');
   };
