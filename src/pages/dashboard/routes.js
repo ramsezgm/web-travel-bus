@@ -6,6 +6,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Layout from '../../components/layout';
 import { getRoutes, addRoute, editRoute, deleteRoute } from '../../services/routeService';
+import { format, parseISO, isValid } from 'date-fns';
 
 const Routes = () => {
   const [rows, setRows] = React.useState([]);
@@ -120,7 +121,10 @@ const Routes = () => {
     }
 
     try {
-      await addRoute(newRoute);
+      const formattedDate = format(new Date(newRoute.fecha_hora), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+      const newRouteData = { ...newRoute, fecha_hora: formattedDate };
+      console.log('Adding route:', newRouteData);
+      await addRoute(newRouteData);
       await fetchRoutes();
       handleCloseAdd();
       setSnackbar({ open: true, message: 'Ruta añadida con éxito', severity: 'success' });
@@ -137,7 +141,9 @@ const Routes = () => {
     }
 
     try {
-      await editRoute(currentRow.rutaId, newRoute);
+      const formattedDate = format(new Date(newRoute.fecha_hora), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+      const newRouteData = { ...newRoute, fecha_hora: formattedDate };
+      await editRoute(currentRow.rutaId, newRouteData);
       await fetchRoutes();
       handleCloseEdit();
       setSnackbar({ open: true, message: 'Ruta actualizada con éxito', severity: 'success' });
@@ -233,7 +239,7 @@ const Routes = () => {
                   <TableCell align="center">{row.rutaId}</TableCell>
                   <TableCell align="center">{row.salida}</TableCell>
                   <TableCell align="center">{row.llegada}</TableCell>
-                  <TableCell align="center">{row.fecha_hora}</TableCell>
+                  <TableCell align="center">{format(parseISO(row.fecha_hora), 'yyyy-MM-dd HH:mm')}</TableCell>
                   <TableCell align="center">{row.puerta}</TableCell>
                   <TableCell align="center">
                     <Button

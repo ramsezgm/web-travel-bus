@@ -3,7 +3,7 @@ import { Avatar, Box, Button, Container, Grid, Paper, TextField, Typography, Div
 import { styled } from '@mui/system';
 import Layout from '../../components/layout';
 import SaveIcon from '@mui/icons-material/Save';
-import { getUserById } from '../../services/userService';
+import { getUserById, updateUser } from '../../services/userService';
 
 const ProfilePaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -34,7 +34,11 @@ const Profile = () => {
     confirmPassword: '',
   });
   const [showPasswordFields, setShowPasswordFields] = React.useState(false);
-  const [openSnackbar, setOpenSnackbar] = React.useState(false);
+  const [snackbar, setSnackbar] = React.useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   React.useEffect(() => {
     const fetchUserData = async () => {
@@ -59,21 +63,63 @@ const Profile = () => {
     setPasswords({ ...passwords, [e.target.name]: e.target.value });
   };
 
-  const handleSave = () => {
-    if (passwords.password && passwords.password !== passwords.confirmPassword) {
-      alert('Las contraseñas no coinciden');
-      return;
+  const handleSave = async () => {
+    if (passwords.password) {
+      if (passwords.password.length < 8) {
+        setSnackbar({
+          open: true,
+          message: 'La contraseña debe tener al menos 8 caracteres',
+          severity: 'error',
+        });
+        return;
+      }
+
+      const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*.-/])(?=.*\d).*$/;
+      const isPasswordValid = passwordRegex.test(passwords.password);
+
+      if (!isPasswordValid) {
+        setSnackbar({
+          open: true,
+          message: 'La contraseña debe contener al menos una mayúscula, un carácter especial y un número',
+          severity: 'error',
+        });
+        return;
+      }
+
+      if (passwords.password !== passwords.confirmPassword) {
+        setSnackbar({
+          open: true,
+          message: 'Las contraseñas no coinciden',
+          severity: 'error',
+        });
+        return;
+      }
+
+      try {
+        const userId = localStorage.getItem('userId');
+        await updateUser(userId, { password: passwords.password });
+        setSnackbar({
+          open: true,
+          message: 'Perfil actualizado con éxito',
+          severity: 'success',
+        });
+        setShowPasswordFields(false);
+      } catch (error) {
+        setSnackbar({
+          open: true,
+          message: 'Error al actualizar el perfil',
+          severity: 'error',
+        });
+        console.error('Failed to update user password', error);
+      }
     }
-    // Lógica para guardar los cambios del perfil del usuario
-    setOpenSnackbar(true);
-    setShowPasswordFields(false);
   };
 
   const handleCloseSnackbar = (event, reason) => {
     if (reason === 'clickaway') {
       return;
     }
-    setOpenSnackbar(false);
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -197,9 +243,13 @@ const Profile = () => {
           </ProfilePaper>
         </Container>
       </Box>
-      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar}>
-        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
-          Perfil actualizado con éxito
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Layout>

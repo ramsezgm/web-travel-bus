@@ -17,3 +17,33 @@ export const getUsers = async () => {
         throw error;
     }
 };
+
+export const createUser = async (user) => {
+    try {
+        console.log(user);
+        const response = await apiClient.post('/auth/signup', user);
+        return response.data.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const updateUser = async (userId, user) => {
+    try {
+        console.log(user);
+        console.log(userId);
+        const response = await apiClient.post(`/user/update-user/${userId}`, user);
+        return response.data.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const deleteUser = async (userId) => {
+    try {
+        const response = await apiClient.delete(`/user/delete-user/${userId}`);
+        return response.data.data;
+    } catch (error) {
+        throw error;
+    }
+}

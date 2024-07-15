@@ -1,11 +1,21 @@
 import * as React from 'react';
-import { Box, Button, IconButton, TextField, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
+import { Box, Button, IconButton, TextField, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem, Select, InputLabel, FormControl, Tooltip, Collapse, Snackbar, Alert } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import LockIcon from '@mui/icons-material/Lock';
+import MuiAlert from '@mui/material/Alert';
 import Layout from '../../components/layout';
-import { getUsers } from '../../services/userService';
+import { getUsers, createUser, updateUser, deleteUser } from '../../services/userService';
+
+// Custom Alert component for styling
+const CustomAlert = React.forwardRef((props, ref) => (
+  <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
+));
 
 const Users = () => {
   const [rows, setRows] = React.useState([]);
@@ -15,39 +25,55 @@ const Users = () => {
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
   const [openDelete, setOpenDelete] = React.useState(false);
+  const [showPasswordFields, setShowPasswordFields] = React.useState(false);
   const [currentRow, setCurrentRow] = React.useState(null);
+  const [snackbar, setSnackbar] = React.useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   const [newUser, setNewUser] = React.useState({
     nombre: '',
     apellido: '',
     email: '',
-    rol: '',
+    roles: ['USUARIO'], // Default role
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
 
-  React.useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const users = await getUsers();
-        const formattedUsers = users.map(user => ({
-          id: user.usuarioId,
-          nombre: `${user.nombre} ${user.apellido}`,
-          email: user.email,
-          rol: user.roles ? user.roles[0].rol.name : 'Usuario'
-        }));
-        setRows(formattedUsers);
-        setFilteredRows(formattedUsers);
-      } catch (error) {
-        console.error('Failed to fetch users', error);
-      }
-    };
+  const fetchUsers = async () => {
+    try {
+      const users = await getUsers();
+      const formattedUsers = users.map(user => ({
+        id: user.usuarioId,
+        nombre: `${user.nombre} ${user.apellido}`,
+        email: user.email,
+        rol: user.roles ? user.roles[0].rol.name : 'Usuario'
+      }));
+      setRows(formattedUsers);
+      setFilteredRows(formattedUsers);
+    } catch (error) {
+      console.error('Failed to fetch users', error);
+    }
+  };
 
+  React.useEffect(() => {
     fetchUsers();
   }, []);
 
   const handleOpenAdd = () => setOpenAdd(true);
-  const handleCloseAdd = () => setOpenAdd(false);
+  const handleCloseAdd = () => {
+    setOpenAdd(false);
+    setNewUser({
+      nombre: '',
+      apellido: '',
+      email: '',
+      roles: ['USUARIO'], // Reset to default role
+      password: '',
+      confirmPassword: '',
+    });
+  };
 
   const handleOpenEdit = (row) => {
     setCurrentRow(row);
@@ -55,10 +81,11 @@ const Users = () => {
       nombre: row.nombre.split(' ')[0],
       apellido: row.nombre.split(' ')[1],
       email: row.email,
-      rol: row.rol,
+      roles: [row.rol],
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
     });
+    setShowPasswordFields(false);
     setOpenEdit(true);
   };
   const handleCloseEdit = () => setOpenEdit(false);
@@ -70,58 +97,107 @@ const Users = () => {
   const handleCloseDelete = () => setOpenDelete(false);
 
   const handleAdd = async () => {
-    if (newUser.password !== newUser.confirmPassword) {
-      alert('Las contraseñas no coinciden');
-      return;
-    }
+    const newUserWithPassword = { ...newUser, password: '123456789' };
     try {
-      const addedUser = await addUser(newUser);
-      const newRow = {
-        id: addedUser.usuarioId,
-        nombre: `${addedUser.nombre} ${addedUser.apellido}`,
-        email: addedUser.email,
-        rol: addedUser.roles ? addedUser.roles[0].rol.name : 'Usuario'
-      };
-      setRows([...rows, newRow]);
-      setFilteredRows([...filteredRows, newRow]);
+      await createUser(newUserWithPassword);
+      await fetchUsers();
       handleCloseAdd();
+      setSnackbar({
+        open: true,
+        message: 'Usuario añadido correctamente',
+        severity: 'success',
+      });
     } catch (error) {
+      setSnackbar({
+        open: true,
+        message: 'Error al añadir el usuario',
+        severity: 'error',
+      });
       console.error('Failed to add user', error);
     }
   };
 
   const handleEdit = async () => {
+    if (newUser.password) {
+      if (newUser.password.length < 8) {
+        setSnackbar({
+          open: true,
+          message: 'La contraseña debe tener al menos 8 caracteres',
+          severity: 'error',
+        });
+        return;
+      }
+  
+      const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*.-/])(?=.*\d).*$/;
+      const isPasswordValid = passwordRegex.test(newUser.password);
+  
+      if (!isPasswordValid) {
+        setSnackbar({
+          open: true,
+          message: 'La contraseña debe contener al menos una mayúscula, un carácter especial y un número',
+          severity: 'error',
+        });
+        return;
+      }
+  
+      if (newUser.password !== newUser.confirmPassword) {
+        setSnackbar({
+          open: true,
+          message: 'Las contraseñas no coinciden',
+          severity: 'error',
+        });
+        return;
+      }
+    }
+  
     try {
-      await editUser(currentRow.id, newUser);
-      const updatedRow = {
-        id: currentRow.id,
-        nombre: `${newUser.nombre} ${newUser.apellido}`,
-        email: newUser.email,
-        rol: newUser.rol
-      };
-      const updatedRows = rows.map(row => row.id === currentRow.id ? updatedRow : row);
-      setRows(updatedRows);
-      setFilteredRows(updatedRows);
+      const { confirmPassword, ...userToUpdate } = newUser;
+      await updateUser(currentRow.id, userToUpdate);
+      await fetchUsers();
       handleCloseEdit();
+      setSnackbar({
+        open: true,
+        message: 'Usuario actualizado correctamente',
+        severity: 'success',
+      });
     } catch (error) {
+      setSnackbar({
+        open: true,
+        message: 'Error al actualizar el usuario',
+        severity: 'error',
+      });
       console.error('Failed to edit user', error);
     }
   };
+  
 
   const handleDelete = async () => {
     try {
       await deleteUser(currentRow.id);
-      const updatedRows = rows.filter(row => row.id !== currentRow.id);
-      setRows(updatedRows);
-      setFilteredRows(updatedRows);
+      await fetchUsers();
       handleCloseDelete();
+      setSnackbar({
+        open: true,
+        message: 'Usuario eliminado correctamente',
+        severity: 'success',
+      });
     } catch (error) {
+      setSnackbar({
+        open: true,
+        message: 'Error al eliminar el usuario',
+        severity: 'error',
+      });
       console.error('Failed to delete user', error);
     }
   };
 
   const handleChange = (e) => {
-    setNewUser({ ...newUser, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'rol') {
+      setNewUser({ ...newUser, roles: [value] });
+    } else {
+      setNewUser({ ...newUser, [name]: value });
+    }
   };
 
   const handleSearchChange = (e) => {
@@ -136,6 +212,10 @@ const Users = () => {
 
   const handleSearchByChange = (e) => {
     setSearchBy(e.target.value);
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -272,7 +352,7 @@ const Users = () => {
               <InputLabel>Rol</InputLabel>
               <Select
                 name="rol"
-                value={newUser.rol}
+                value={newUser.roles[0]}
                 onChange={handleChange}
                 label="Rol"
               >
@@ -281,28 +361,6 @@ const Users = () => {
                 <MenuItem value="USUARIO">Usuario</MenuItem>
               </Select>
             </FormControl>
-            <TextField
-              margin="dense"
-              label="Contraseña"
-              type="password"
-              fullWidth
-              variant="outlined"
-              name="password"
-              value={newUser.password}
-              onChange={handleChange}
-              sx={{ marginBottom: 2 }}
-            />
-            <TextField
-              margin="dense"
-              label="Confirmar Contraseña"
-              type="password"
-              fullWidth
-              variant="outlined"
-              name="confirmPassword"
-              value={newUser.confirmPassword}
-              onChange={handleChange}
-              sx={{ marginBottom: 2 }}
-            />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseAdd} color="primary">
@@ -359,7 +417,7 @@ const Users = () => {
               <InputLabel>Rol</InputLabel>
               <Select
                 name="rol"
-                value={newUser.rol}
+                value={newUser.roles[0]}
                 onChange={handleChange}
                 label="Rol"
               >
@@ -368,6 +426,40 @@ const Users = () => {
                 <MenuItem value="USUARIO">Usuario</MenuItem>
               </Select>
             </FormControl>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Tooltip title="Editar Contraseña">
+                <IconButton onClick={() => setShowPasswordFields(!showPasswordFields)}>
+                  {showPasswordFields ? <LockOpenIcon /> : <LockIcon />}
+                </IconButton>
+              </Tooltip>
+              <Typography variant="body2" sx={{ ml: 1 }}>
+                {showPasswordFields ? 'Ocultar Contraseña' : 'Editar Contraseña'}
+              </Typography>
+            </Box>
+            <Collapse in={showPasswordFields}>
+              <TextField
+                margin="dense"
+                label="Nueva Contraseña"
+                type="password"
+                fullWidth
+                variant="outlined"
+                name="password"
+                value={newUser.password}
+                onChange={handleChange}
+                sx={{ marginBottom: 2 }}
+              />
+              <TextField
+                margin="dense"
+                label="Confirmar Nueva Contraseña"
+                type="password"
+                fullWidth
+                variant="outlined"
+                name="confirmPassword"
+                value={newUser.confirmPassword}
+                onChange={handleChange}
+                sx={{ marginBottom: 2 }}
+              />
+            </Collapse>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseEdit} color="primary">
@@ -397,6 +489,15 @@ const Users = () => {
           </DialogActions>
         </Dialog>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+      >
+        <CustomAlert onClose={handleSnackbarClose} severity={snackbar.severity}>
+          {snackbar.message}
+        </CustomAlert>
+      </Snackbar>
     </Layout>
   );
 };
