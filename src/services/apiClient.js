@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: '/api/v1',
+  baseURL: 'https://travel-bus-81kx.onrender.com/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
