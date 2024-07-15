@@ -1,19 +1,28 @@
-"use client";
-
-import * as React from 'react';
-import { Box, CssBaseline } from '@mui/material';
+// src/components/layout.js
+import React from 'react';
+import { Box } from '@mui/material';
 import Sidebar from './sidebar';
-import { usePathname } from 'next/navigation';
 
 const Layout = ({ children }) => {
-  const pathname = usePathname();
-  const showSidebar = !pathname.includes('/login');
-
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      {showSidebar && <Sidebar />}
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        backgroundImage: 'url(/wpp_1.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <Sidebar />
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          backgroundColor: 'rgba(255, 255, 255, 0.8)', // Fondo blanco con transparencia
+        }}
+      >
         {children}
       </Box>
     </Box>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Box, Button, TextField, Typography, Paper, Avatar, Snackbar, Alert } from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Image from 'next/image'; // Importa el componente Image de Next.js
 import { adminLogin } from '../../services/authService';
 
 const Login = () => {
@@ -42,7 +42,9 @@ const Login = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        background: '#162B4E',
+        backgroundImage: 'url(/wpp_3.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
       <Paper
@@ -56,11 +58,16 @@ const Login = () => {
           boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: '#162B4E', mx: 'auto' }}>
-          <LockOutlinedIcon />
-        </Avatar>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <Image
+            src="/logo_marco.png" // Ruta a la imagen del logo en la carpeta public
+            alt="Logo"
+            width={120} // Ajusta el tamaño según sea necesario
+            height={120} // Ajusta el tamaño según sea necesario
+          />
+        </Box>
         <Typography variant="h5" gutterBottom>
-          Admin Login
+          Inicio de Sesión
         </Typography>
         <Box component="form" sx={{ mt: 2 }} onSubmit={handleSignin}>
           <TextField
