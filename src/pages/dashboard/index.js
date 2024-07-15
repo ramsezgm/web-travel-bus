@@ -5,9 +5,26 @@ import PeopleIcon from '@mui/icons-material/People';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import Layout from '../../components/layout';
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import jwt from 'jsonwebtoken';
 
 const Dashboard = () => {
   const theme = useTheme();
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/auth');
+    } else {
+      const user = jwt.decode(token);
+      if (!user || !user.roles.includes('ADMINISTRADOR')) {
+        router.push('/auth');
+      }
+    }
+  }, [router]);
+
 
   return (
     <Layout>

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { Box, Button, TextField, Typography, Paper, Avatar, Snackbar, Alert } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { adminLogin } from '../../services/authService';
+import jwt from 'jsonwebtoken';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,8 +17,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await adminLogin({ email, password });
-      // Guarda el token y el userId en localStorage
-      localStorage.setItem('token', response.token);
+      document.cookie = `token=${response.token}; path=/`;
       localStorage.setItem('userId', response.usuarioId);
       setSnackbarMessage('Inicio de sesión exitoso!');
       setSnackbarSeverity('success');

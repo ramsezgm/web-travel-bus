@@ -4,15 +4,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import LockIcon from '@mui/icons-material/Lock';
 import MuiAlert from '@mui/material/Alert';
 import Layout from '../../components/layout';
 import { getUsers, createUser, updateUser, deleteUser } from '../../services/userService';
 
-// Custom Alert component for styling
 const CustomAlert = React.forwardRef((props, ref) => (
   <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
 ));
@@ -37,7 +34,7 @@ const Users = () => {
     nombre: '',
     apellido: '',
     email: '',
-    roles: ['USUARIO'], // Default role
+    roles: ['USUARIO'],
     password: '',
     confirmPassword: '',
   });
@@ -69,7 +66,7 @@ const Users = () => {
       nombre: '',
       apellido: '',
       email: '',
-      roles: ['USUARIO'], // Reset to default role
+      roles: ['USUARIO'],
       password: '',
       confirmPassword: '',
     });
@@ -169,7 +166,6 @@ const Users = () => {
       console.error('Failed to edit user', error);
     }
   };
-  
 
   const handleDelete = async () => {
     try {

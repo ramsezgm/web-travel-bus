@@ -1,23 +1,23 @@
 import * as React from 'react';
-import { Box, Button, IconButton, TextField, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Stepper, Step, StepLabel, FormControl, InputLabel, Select, MenuItem, Snackbar, Alert } from '@mui/material';
+import { Box, Button, IconButton, TextField, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem, Select, InputLabel, FormControl, Stepper, Step, StepLabel, Snackbar, Alert } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Layout from '../../components/layout';
 import { getRoutes, addRoute, editRoute, deleteRoute } from '../../services/routeService';
-import { format, parseISO, isValid } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const Routes = () => {
   const [rows, setRows] = React.useState([]);
   const [filteredRows, setFilteredRows] = React.useState([]);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchBy, setSearchBy] = React.useState('salida'); // Default search by 'salida'
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
   const [openDelete, setOpenDelete] = React.useState(false);
   const [currentRow, setCurrentRow] = React.useState(null);
   const [activeStep, setActiveStep] = React.useState(0);
-  const [filter, setFilter] = React.useState('');
-  const [searchBy, setSearchBy] = React.useState('salida');
   const [newRoute, setNewRoute] = React.useState({
     salida: '',
     llegada: '',
@@ -82,19 +82,12 @@ const Routes = () => {
     setNewRoute({ ...newRoute, [e.target.name]: e.target.value });
   };
 
-  const handleFilterChange = (e) => {
-    setFilter(e.target.value);
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
   };
 
   const handleSearchByChange = (e) => {
     setSearchBy(e.target.value);
-  };
-
-  const handleFilter = () => {
-    const filtered = rows.filter(row =>
-      row[searchBy].toLowerCase().includes(filter.toLowerCase())
-    );
-    setFilteredRows(filtered);
   };
 
   const validateRouteData = (data) => {
@@ -114,6 +107,21 @@ const Routes = () => {
     }
   };
 
+  React.useEffect(() => {
+    fetchRoutes();
+  }, []);
+
+  React.useEffect(() => {
+    const filteredData = rows.filter(row =>
+      searchBy === 'salida'
+        ? row.salida.toLowerCase().includes(searchQuery.toLowerCase())
+        : searchBy === 'llegada'
+        ? row.llegada.toLowerCase().includes(searchQuery.toLowerCase())
+        : row.puerta.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredRows(filteredData);
+  }, [searchQuery, searchBy, rows]);
+
   const handleAdd = async () => {
     if (!validateRouteData(newRoute)) {
       setSnackbar({ open: true, message: 'Todos los campos son obligatorios', severity: 'error' });
@@ -123,7 +131,6 @@ const Routes = () => {
     try {
       const formattedDate = format(new Date(newRoute.fecha_hora), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
       const newRouteData = { ...newRoute, fecha_hora: formattedDate };
-      console.log('Adding route:', newRouteData);
       await addRoute(newRouteData);
       await fetchRoutes();
       handleCloseAdd();
@@ -169,10 +176,6 @@ const Routes = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  React.useEffect(() => {
-    fetchRoutes();
-  }, []);
-
   return (
     <Layout>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '95vh', width: '100%' }}>
@@ -180,14 +183,16 @@ const Routes = () => {
           Rutas
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
             <TextField
               size="small"
               variant="outlined"
               placeholder="Buscar..."
+              value={searchQuery}
+              onChange={handleSearchChange}
               InputProps={{
                 endAdornment: (
-                  <IconButton onClick={handleFilter}>
+                  <IconButton>
                     <SearchIcon />
                   </IconButton>
                 ),
@@ -195,8 +200,6 @@ const Routes = () => {
                   borderRadius: '8px',
                 },
               }}
-              value={filter}
-              onChange={handleFilterChange}
             />
             <FormControl variant="outlined" sx={{ ml: 2, minWidth: 120 }}>
               <InputLabel>Buscar por</InputLabel>
@@ -534,7 +537,11 @@ const Routes = () => {
             </Button>
           </DialogActions>
         </Dialog>
-        <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleSnackbarClose}
+        >
           <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
             {snackbar.message}
           </Alert>
