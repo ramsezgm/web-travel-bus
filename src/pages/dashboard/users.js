@@ -169,23 +169,24 @@ const Users = () => {
 
   const handleDelete = async () => {
     try {
-      await deleteUser(currentRow.id);
-      await fetchUsers();
-      handleCloseDelete();
-      setSnackbar({
-        open: true,
-        message: 'Usuario eliminado correctamente',
-        severity: 'success',
-      });
+        await deleteUser(currentRow.id);
+        await fetchUsers();
+        handleCloseDelete();
+        setSnackbar({
+            open: true,
+            message: 'Usuario eliminado correctamente',
+            severity: 'success',
+        });
     } catch (error) {
-      setSnackbar({
-        open: true,
-        message: 'Error al eliminar el usuario',
-        severity: 'error',
-      });
-      console.error('Failed to delete user', error);
+        const errorMessage = error.response?.data?.messageError || 'Error al eliminar el usuario';
+        setSnackbar({
+            open: true,
+            message: errorMessage,
+            severity: 'error',
+        });
+        console.error('Failed to delete user', error);
     }
-  };
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
