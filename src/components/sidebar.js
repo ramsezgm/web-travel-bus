@@ -7,19 +7,14 @@ import RouteIcon from '@mui/icons-material/Route';
 import PeopleIcon from '@mui/icons-material/People';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-import { logout } from '../services/authService';
 
 const Sidebar = () => {
   const router = useRouter();
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      router.push('/auth'); 
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    localStorage.removeItem('userId');
+    router.push('/auth');
   };
 
   const getLinkStyle = (path) => {
