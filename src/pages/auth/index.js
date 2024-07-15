@@ -23,7 +23,7 @@ const Login = () => {
       setSnackbarSeverity('success');
       router.push('/dashboard');
     } catch (error) {
-      setSnackbarMessage(error.response?.data?.message || 'Error al iniciar sesión');
+      setSnackbarMessage('Error al iniciar sesión');
       setSnackbarSeverity('error');
     } finally {
       setOpenSnackbar(true);
